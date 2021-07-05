@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Rdmptn/tinyapp/issues"
   },
-  "homepage": "https://github.com/Rdmptn/tinyapp#readme"
+  "homepage": "https://github.com/Rdmptn/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
