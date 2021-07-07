@@ -81,8 +81,13 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
+app.get("/login", (req, res) => {
+  res.render("login_page");
+});
+
 app.post("/login", (req, res) => {
-  res.cookie("user_id");
+  let email = req.body.email;
+  let pw = req.body.password;
   res.redirect("/urls");
 });
 

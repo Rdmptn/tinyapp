@@ -19,9 +19,11 @@
             <button class="btn btn-primary my-2 my-sm-0" type="submit" name="logout">Logout</button>
           </form>
         <% } else {%>
-          <form class="form-inline" method="POST" action="/login">
-            <input class="form-control mr-sm-2" type="text" name="email" placeholder="Email:">
-            <button class="btn btn-primary my-2 my-sm-0" type="submit">Login</button>
+          <form class="form-inline" method="GET" action="/login">
+            <button class="btn btn-primary my-2 my-sm-0 mr-2" type="submit">Login</button>
+          </form>
+           <form class="form-inline" method="GET" action="/register">
+            <button class="btn btn-primary my-2 my-sm-0" type="submit">Register</button>
           </form>
         <% } %>
     </div>
