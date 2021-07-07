@@ -21,9 +21,10 @@ let uniqueEmailChecker = function(email) {
   for (let user in users) {
     console.log(users[user].email);
     if (users[user].email === email) {
-      return false;
+      return user;
     }
   }
+  return false;
 }
 
 const urlDatabase = {
@@ -88,7 +89,19 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   let email = req.body.email;
   let pw = req.body.password;
-  res.redirect("/urls");
+  let user = uniqueEmailChecker(email);
+  if (user === false) {
+    res.status(403).send("Email address not found.");
+    return;
+  } else {
+    if (users[user].password !== pw) {
+      res.status(403).send("Incorrect password.");
+      return;
+    } else {
+      res.cookie("user_id", users[user].id);
+      res.redirect("/urls");
+    }
+  }
 });
 
 app.post("/logout", (req, res) => {
@@ -107,13 +120,12 @@ app.post("/register", (req, res) => {
     res.status(400).send('Email and password cannot be empty.');
     return;
   }
-  else if (uniqueEmailChecker(email) === false) {
+  else if (uniqueEmailChecker(email)) {
     res.status(400).send("Email address already registered.");
     return;
   }
   let newUserId = generateRandomString();
-  users[newUserId] = { id: newUserId , email: email , password: pw }
-  console.log(users);
+  users[newUserId] = { id: newUserId , email: email , password: pw };
   res.cookie("user_id", newUserId);
   res.redirect("/urls");
 });
