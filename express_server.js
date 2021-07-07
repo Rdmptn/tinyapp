@@ -27,11 +27,7 @@ let uniqueEmailChecker = function(email) {
   return false;
 }
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
+const urlDatabase = {};
 const users = {};
 
 app.get("/", (req, res) => {
@@ -47,29 +43,50 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  if (req.cookies["user_id"] === undefined) {
+    res.cookie("user_id");
+  }
   const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]]};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] };
+  console.log(templateVars.user);
+  if (templateVars.user === undefined) {
+    res.redirect("/login");
+    return;
+  }
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL,  longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]]  };
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    res.status(403).send("Shortened URL does not exist");
+    return;
+  }
+  const templateVars = { shortURL: req.params.shortURL,  longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]]  };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  let newShortUrl =  generateRandomString();
-  urlDatabase[newShortUrl] = `http://www.${req.body.longURL}`;
-  res.redirect(`/urls/${newShortUrl}`);
+  if (req.cookies["user_id"] !== undefined) {
+    let newShortUrl =  generateRandomString();
+    urlDatabase[newShortUrl] = {longURL: `http://www.${req.body.longURL}`, userID: req.cookies["user_id"]};
+    res.redirect(`/urls/${newShortUrl}`);
+    return;
+  }
+  res.status(403).send("You may not create a new URL unless you are logged in.\n");
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  let shortURL = urlDatabase[req.params.shortURL]
+  if (shortURL !== undefined) {
+    let longURL = shortURL.longURL;
+    res.redirect(longURL);
+    return;
+  }
+  res.status(403).send("This is not a valid shortened link.");
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -78,11 +95,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] = `http://www.${req.body.newURL}`;
+  urlDatabase[req.params.shortURL].longURL = `http://www.${req.body.newURL}`;
   res.redirect("/urls");
 });
 
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"] !== "undefined") {
+    res.redirect("/urls");
+    return;
+  } 
   res.render("login_page");
 });
 
@@ -110,6 +131,10 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  if (req.cookies["user_id"] !== "undefined") {
+    res.redirect("/urls");
+    return;
+  } 
   res.render("register_page");
 });
 
