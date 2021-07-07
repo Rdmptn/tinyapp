@@ -8,13 +8,22 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
-function generateRandomString() {
+let generateRandomString = function() {
   const alphaNumChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let newString = "";
   for (let i = 0; i < 6; i++) {
     newString += alphaNumChars.charAt(Math.floor(Math.random() * alphaNumChars.length));
   }
   return newString;
+}
+
+let uniqueEmailChecker = function(email) {
+  for (let user in users) {
+    console.log(users[user].email);
+    if (users[user].email === email) {
+      return false;
+    }
+  }
 }
 
 const urlDatabase = {
@@ -87,8 +96,19 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
+  let email = req.body.email;
+  let pw = req.body.password;
+  if (email ===  "" || pw === "") {
+    res.status(400).send('Email and password cannot be empty.');
+    return;
+  }
+  else if (uniqueEmailChecker(email) === false) {
+    res.status(400).send("Email address already registered.");
+    return;
+  }
   let newUserId = generateRandomString();
-  users[newUserId] = { id: newUserId , email: req.body.email , password: req.body.password }
+  users[newUserId] = { id: newUserId , email: email , password: pw }
+  console.log(users);
   res.cookie("user_id", newUserId);
   res.redirect("/urls");
 });
