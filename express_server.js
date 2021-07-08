@@ -4,16 +4,17 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session')
 const bcrypt = require('bcrypt');
+const { uniqueEmailChecker } = require('./helpers');
+const urlDatabase = {};
+const users = {};
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: ["user_id"],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
+  maxAge: 24 * 60 * 60 * 1000 
+}));
 
 let generateRandomString = function() {
   const alphaNumChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -22,15 +23,6 @@ let generateRandomString = function() {
     newString += alphaNumChars.charAt(Math.floor(Math.random() * alphaNumChars.length));
   }
   return newString;
-};
-
-let uniqueEmailChecker = function(email) {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return user;
-    }
-  }
-  return false;
 };
 
 let urlsForUser = function(id) {
@@ -42,11 +34,13 @@ let urlsForUser = function(id) {
   return myURLs;
 };
 
-const urlDatabase = {};
-const users = {};
-
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.user_id === undefined){
+    req.session.user_id = "";
+    res.redirect("/login");
+    return;
+  }
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -130,14 +124,15 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   let email = req.body.email;
   let pw = req.body.password;
-  let user = uniqueEmailChecker(email);
+  let user = uniqueEmailChecker(email, users);
   if (user === false) {
-    res.status(403).send("Email address not found.");
+    res.status(403).send("Email address not found. Please try again or register at /register.");
     return;
   } else {
     if (bcrypt.compareSync(pw, users[user].password)) {
       req.session.user_id = users[user].id;
       res.redirect("/urls");
+      return;
     } else {
       res.status(403).send("Incorrect password.");
       return;
@@ -165,7 +160,7 @@ app.post("/register", (req, res) => {
     res.status(400).send('Email and password cannot be empty.');
     return;
   }
-  else if (uniqueEmailChecker(email)) {
+  else if (uniqueEmailChecker(email, users)) {
     res.status(400).send("Email address already registered.");
     return;
   }
