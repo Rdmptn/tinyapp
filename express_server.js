@@ -15,7 +15,7 @@ let generateRandomString = function() {
     newString += alphaNumChars.charAt(Math.floor(Math.random() * alphaNumChars.length));
   }
   return newString;
-}
+};
 
 let uniqueEmailChecker = function(email) {
   for (let user in users) {
@@ -25,7 +25,16 @@ let uniqueEmailChecker = function(email) {
     }
   }
   return false;
-}
+};
+
+let urlsForUser = function(id) {
+  let myURLs = {}
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === id) 
+      myURLs[url] = { longURL: urlDatabase[url].longURL, userID: id }
+  }
+  return myURLs;
+};
 
 const urlDatabase = {};
 const users = {};
@@ -46,7 +55,7 @@ app.get("/urls", (req, res) => {
   if (req.cookies["user_id"] === undefined) {
     res.cookie("user_id");
   }
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]]};
+  const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user: users[req.cookies["user_id"]]};
   res.render("urls_index", templateVars);
 });
 
@@ -90,13 +99,19 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  if (urlDatabase[req.params.shortURL].userID === req.cookies["user_id"]) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  }
+  res.status(403).send("You may not edit or delete URLS that aren't associated with your own userID.");
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL].longURL = `http://www.${req.body.newURL}`;
-  res.redirect("/urls");
+  if (urlDatabase[req.params.shortURL].userID === req.cookies["user_id"]) {
+    urlDatabase[req.params.shortURL].longURL = `http://www.${req.body.newURL}`;
+    res.redirect("/urls");
+  }
+  res.status(403).send("You may not edit or delete URLS that aren't associated with your own userID.");
 });
 
 app.get("/login", (req, res) => {
