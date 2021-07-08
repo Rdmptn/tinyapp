@@ -101,6 +101,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
+    return;
   }
   res.status(403).send("You may not edit or delete URLS that aren't associated with your own userID.");
 });
@@ -109,6 +110,7 @@ app.post("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
     urlDatabase[req.params.shortURL].longURL = `http://www.${req.body.newURL}`;
     res.redirect("/urls");
+    return;
   }
   res.status(403).send("You may not edit or delete URLS that aren't associated with your own userID.");
 });
