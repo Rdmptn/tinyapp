@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -61,7 +62,6 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] };
-  console.log(templateVars.user);
   if (templateVars.user === undefined) {
     res.redirect("/login");
     return;
@@ -130,12 +130,12 @@ app.post("/login", (req, res) => {
     res.status(403).send("Email address not found.");
     return;
   } else {
-    if (users[user].password !== pw) {
-      res.status(403).send("Incorrect password.");
-      return;
-    } else {
+    if (bcrypt.compareSync(pw, users[user].password)) {
       res.cookie("user_id", users[user].id);
       res.redirect("/urls");
+    } else {
+      res.status(403).send("Incorrect password.");
+      return;
     }
   }
 });
@@ -164,8 +164,10 @@ app.post("/register", (req, res) => {
     res.status(400).send("Email address already registered.");
     return;
   }
+  let pwHashed = bcrypt.hashSync(pw, 10);
+  console.log("hashed pass: ", pwHashed);
   let newUserId = generateRandomString();
-  users[newUserId] = { id: newUserId , email: email , password: pw };
+  users[newUserId] = { id: newUserId , email: email , password: pwHashed };
   res.cookie("user_id", newUserId);
   res.redirect("/urls");
 });
